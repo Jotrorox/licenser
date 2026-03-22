@@ -1,0 +1,261 @@
+---
+import Base from "../layouts/Base.astro";
+import { licenses, categories } from "../data/licenses";
+---
+
+<Base title="Compare Licenses">
+  <div class="hero">
+    <h1>Compare Licenses</h1>
+    <p>Select two licenses to compare their permissions, conditions, and limitations side by side.</p>
+  </div>
+
+  <div class="selectors">
+    <div class="select-wrap">
+      <label for="licenseA">License A</label>
+      <select id="licenseA">
+        <option value="">Select a license...</option>
+        {licenses.map((l) => <option value={l.id}>{l.name}</option>)}
+      </select>
+    </div>
+    <div class="vs">vs</div>
+    <div class="select-wrap">
+      <label for="licenseB">License B</label>
+      <select id="licenseB">
+        <option value="">Select a license...</option>
+        {licenses.map((l) => <option value={l.id}>{l.name}</option>)}
+      </select>
+    </div>
+  </div>
+
+  <div id="comparison" class="comparison hidden">
+    <div class="compare-grid">
+      <div class="compare-col" id="colA"></div>
+      <div class="compare-col" id="colB"></div>
+    </div>
+  </div>
+
+  <script define:vars={{ licenses, categories }}>
+    const licenseMap = Object.fromEntries(licenses.map((l) => [l.id, l]));
+    const selectA = document.getElementById("licenseA");
+    const selectB = document.getElementById("licenseB");
+    const comparison = document.getElementById("comparison");
+    const colA = document.getElementById("colA");
+    const colB = document.getElementById("colB");
+
+    function render() {
+      const a = licenseMap[selectA.value];
+      const b = licenseMap[selectB.value];
+
+      if (!a || !b) {
+        comparison.classList.add("hidden");
+        return;
+      }
+
+      comparison.classList.remove("hidden");
+      colA.innerHTML = renderLicense(a);
+      colB.innerHTML = renderLicense(b);
+    }
+
+    function renderLicense(l) {
+      const cat = categories[l.category];
+      return `
+        <div class="compare-header">
+          <span class="badge" style="background:${cat.color}22;color:${cat.color};border:1px solid ${cat.color}33">${cat.label}</span>
+          <h2>${escapeHtml(l.name)}</h2>
+          <span class="spdx">${escapeHtml(l.spdx)}</span>
+        </div>
+        <div class="compare-section perm-section">
+          <h3>Permissions</h3>
+          <ul>${l.permissions.map((p) => `<li><span class="icon perm">&#10003;</span> ${escapeHtml(p)}</li>`).join("")}</ul>
+        </div>
+        <div class="compare-section cond-section">
+          <h3>Conditions</h3>
+          ${l.conditions.length ? `<ul>${l.conditions.map((c) => `<li><span class="icon cond">&#9679;</span> ${escapeHtml(c)}</li>`).join("")}</ul>` : '<p class="none">None</p>'}
+        </div>
+        <div class="compare-section lim-section">
+          <h3>Limitations</h3>
+          ${l.limitations.length ? `<ul>${l.limitations.map((x) => `<li><span class="icon lim">&times;</span> ${escapeHtml(x)}</li>`).join("")}</ul>` : '<p class="none">None</p>'}
+        </div>
+      `;
+    }
+
+    function escapeHtml(text) {
+      const el = document.createElement("span");
+      el.textContent = text;
+      return el.innerHTML;
+    }
+
+    selectA.addEventListener("change", render);
+    selectB.addEventListener("change", render);
+  </script>
+</Base>
+
+<style>
+  .hero {
+    text-align: center;
+    padding: 2.5rem 0 2rem;
+  }
+
+  .hero h1 {
+    font-size: 2rem;
+    font-weight: 700;
+    letter-spacing: -0.03em;
+    margin-bottom: 0.5rem;
+  }
+
+  .hero p {
+    color: var(--text-muted);
+    font-size: 1rem;
+  }
+
+  .selectors {
+    display: flex;
+    align-items: end;
+    gap: 1rem;
+    justify-content: center;
+    margin-bottom: 2rem;
+    flex-wrap: wrap;
+  }
+
+  .select-wrap {
+    flex: 1;
+    max-width: 340px;
+  }
+
+  .select-wrap label {
+    display: block;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--text-muted);
+    margin-bottom: 0.375rem;
+  }
+
+  .select-wrap select {
+    width: 100%;
+    padding: 0.625rem 0.875rem;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    color: var(--text);
+    font-size: 0.875rem;
+    outline: none;
+    cursor: pointer;
+    transition: border-color 0.15s;
+  }
+
+  .select-wrap select:focus {
+    border-color: var(--text-muted);
+  }
+
+  .vs {
+    font-size: 0.875rem;
+    color: var(--text-muted);
+    font-weight: 600;
+    padding-bottom: 0.625rem;
+  }
+
+  .comparison {
+    transition: opacity 0.2s;
+  }
+
+  .comparison.hidden {
+    display: none;
+  }
+
+  .compare-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+  }
+
+  .compare-col {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 1.5rem;
+  }
+
+  .compare-col :global(.compare-header) {
+    margin-bottom: 1.25rem;
+  }
+
+  .compare-col :global(.badge) {
+    font-size: 0.6875rem;
+    font-weight: 600;
+    padding: 0.2rem 0.5rem;
+    border-radius: 999px;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    display: inline-block;
+    margin-bottom: 0.5rem;
+  }
+
+  .compare-col :global(h2) {
+    font-size: 1.125rem;
+    font-weight: 700;
+    margin-bottom: 0.25rem;
+  }
+
+  .compare-col :global(.spdx) {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    font-family: monospace;
+  }
+
+  .compare-col :global(.compare-section) {
+    margin-bottom: 1rem;
+  }
+
+  .compare-col :global(h3) {
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 0.5rem;
+  }
+
+  .compare-col :global(.perm-section h3) { color: #10b981; }
+  .compare-col :global(.cond-section h3) { color: #f59e0b; }
+  .compare-col :global(.lim-section h3) { color: #ef4444; }
+
+  .compare-col :global(ul) {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 0.375rem;
+  }
+
+  .compare-col :global(li) {
+    font-size: 0.8125rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .compare-col :global(.icon) {
+    font-size: 0.75rem;
+    width: 1rem;
+    text-align: center;
+    flex-shrink: 0;
+  }
+
+  .compare-col :global(.icon.perm) { color: #10b981; }
+  .compare-col :global(.icon.cond) { color: #f59e0b; }
+  .compare-col :global(.icon.lim) { color: #ef4444; }
+
+  .compare-col :global(.none) {
+    font-size: 0.8125rem;
+    color: var(--text-muted);
+  }
+
+  @media (max-width: 640px) {
+    .compare-grid {
+      grid-template-columns: 1fr;
+    }
+    .hero h1 {
+      font-size: 1.5rem;
+    }
+  }
+</style>
