@@ -6,7 +6,7 @@ import { licenses, categories } from "../data/licenses";
 <Base title="Browse Licenses">
   <div class="hero">
     <h1>Open Source Licenses</h1>
-    <p>Browse, compare, and understand 25 popular open source licenses.</p>
+    <p>Browse, compare, and understand the most popular open source licenses.</p>
   </div>
 
   <div class="filters" id="filters">
@@ -27,7 +27,7 @@ import { licenses, categories } from "../data/licenses";
     {licenses.map((license) => {
       const cat = categories[license.category];
       return (
-        <a href={`/license/${license.id}`} class="card" data-category={license.category} data-name={license.name.toLowerCase()}>
+        <button class="card" data-category={license.category} data-name={license.name.toLowerCase()} data-id={license.id}>
           <div class="card-head">
             <span class="badge" style={`background:${cat.color}22;color:${cat.color};border:1px solid ${cat.color}33`}>
               {cat.label}
@@ -41,10 +41,60 @@ import { licenses, categories } from "../data/licenses";
             <span class="meta-item cond">{license.conditions.length} conditions</span>
             <span class="meta-item lim">{license.limitations.length} limitations</span>
           </div>
-        </a>
+        </button>
       );
     })}
   </div>
+
+  <!-- License Preview Modal -->
+  <div class="modal-overlay" id="modal-overlay">
+    <div class="modal" id="modal">
+      <div class="modal-actions">
+        <a class="modal-btn" id="modal-expand" href="/" title="Expand to full page">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5">
+            <polyline points="6 2 2 2 2 6" /><line x1="2" y1="2" x2="7" y2="7" />
+            <polyline points="10 14 14 14 14 10" /><line x1="14" y1="14" x2="9" y2="9" />
+          </svg>
+        </a>
+        <button class="modal-btn" id="modal-close" title="Close">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5">
+            <line x1="3" y1="3" x2="13" y2="13" /><line x1="13" y1="3" x2="3" y2="13" />
+          </svg>
+        </button>
+      </div>
+      <div class="modal-body" id="modal-body"></div>
+    </div>
+  </div>
+
+  <!-- Compare Section -->
+  <section class="compare-section" id="compare-section">
+    <div class="section-divider">
+      <span>Compare</span>
+    </div>
+    <div class="selectors">
+      <div class="select-wrap">
+        <label for="licenseA">License A</label>
+        <select id="licenseA">
+          <option value="">Select a license...</option>
+          {licenses.map((l) => <option value={l.id}>{l.name}</option>)}
+        </select>
+      </div>
+      <div class="vs">vs</div>
+      <div class="select-wrap">
+        <label for="licenseB">License B</label>
+        <select id="licenseB">
+          <option value="">Select a license...</option>
+          {licenses.map((l) => <option value={l.id}>{l.name}</option>)}
+        </select>
+      </div>
+    </div>
+    <div id="comparison" class="comparison hidden">
+      <div class="compare-grid">
+        <div class="compare-col" id="colA"></div>
+        <div class="compare-col" id="colB"></div>
+      </div>
+    </div>
+  </section>
 </Base>
 
 <style>
@@ -139,6 +189,10 @@ import { licenses, categories } from "../data/licenses";
     display: flex;
     flex-direction: column;
     gap: 0.625rem;
+    cursor: pointer;
+    text-align: left;
+    font-family: inherit;
+    color: inherit;
   }
 
   .card:hover {
@@ -195,6 +249,312 @@ import { licenses, categories } from "../data/licenses";
   .cond { color: #f59e0b; }
   .lim { color: #ef4444; }
 
+  /* Modal */
+  .modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(4px);
+    z-index: 200;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.2s, visibility 0.2s;
+  }
+
+  .modal-overlay.open {
+    opacity: 1;
+    visibility: visible;
+  }
+
+  .modal {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    width: 100%;
+    max-width: 640px;
+    max-height: 80vh;
+    overflow-y: auto;
+    position: relative;
+    transform: scale(0.96);
+    transition: transform 0.2s;
+  }
+
+  .modal-overlay.open .modal {
+    transform: scale(1);
+  }
+
+  .modal-actions {
+    position: sticky;
+    top: 0;
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.25rem;
+    padding: 0.75rem 1rem 0;
+    background: var(--bg);
+    z-index: 1;
+  }
+
+  .modal-btn {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    color: var(--text-muted);
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: color 0.15s, border-color 0.15s;
+  }
+
+  .modal-btn:hover {
+    color: var(--text);
+    border-color: var(--text-muted);
+  }
+
+  .modal-body {
+    padding: 0.5rem 1.5rem 1.5rem;
+  }
+
+  .modal-body :global(.m-badge) {
+    font-size: 0.6875rem;
+    font-weight: 600;
+    padding: 0.2rem 0.5rem;
+    border-radius: 999px;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    display: inline-block;
+    margin-bottom: 0.75rem;
+  }
+
+  .modal-body :global(.m-title) {
+    font-size: 1.25rem;
+    font-weight: 700;
+    letter-spacing: -0.03em;
+    margin-bottom: 0.25rem;
+  }
+
+  .modal-body :global(.m-spdx) {
+    font-size: 0.8125rem;
+    color: var(--text-muted);
+    margin-bottom: 0.75rem;
+    font-family: monospace;
+  }
+
+  .modal-body :global(.m-desc) {
+    font-size: 0.875rem;
+    color: var(--text-muted);
+    line-height: 1.6;
+    margin-bottom: 1.25rem;
+  }
+
+  .modal-body :global(.m-columns) {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.75rem;
+    margin-bottom: 1.25rem;
+  }
+
+  .modal-body :global(.m-col) {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 0.875rem;
+  }
+
+  .modal-body :global(.m-col h3) {
+    font-size: 0.6875rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 0.5rem;
+  }
+
+  .modal-body :global(.m-col.perm-col h3) { color: #10b981; }
+  .modal-body :global(.m-col.cond-col h3) { color: #f59e0b; }
+  .modal-body :global(.m-col.lim-col h3) { color: #ef4444; }
+
+  .modal-body :global(.m-col ul) {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 0.375rem;
+  }
+
+  .modal-body :global(.m-col li) {
+    font-size: 0.75rem;
+    display: flex;
+    align-items: center;
+    gap: 0.375rem;
+  }
+
+  .modal-body :global(.m-icon) {
+    font-size: 0.6875rem;
+    width: 0.875rem;
+    text-align: center;
+    flex-shrink: 0;
+  }
+
+  .modal-body :global(.m-icon.perm) { color: #10b981; }
+  .modal-body :global(.m-icon.cond) { color: #f59e0b; }
+  .modal-body :global(.m-icon.lim) { color: #ef4444; }
+
+  .modal-body :global(.m-none) {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+  }
+
+  .modal-body :global(.m-text-toggle) {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+  }
+
+  .modal-body :global(.m-text-toggle summary) {
+    padding: 0.75rem 1rem;
+    cursor: pointer;
+    font-size: 0.8125rem;
+    font-weight: 500;
+    color: var(--text-muted);
+    transition: color 0.15s;
+  }
+
+  .modal-body :global(.m-text-toggle summary:hover) {
+    color: var(--text);
+  }
+
+  .modal-body :global(.m-text-toggle pre) {
+    padding: 0 1rem 1rem;
+    font-size: 0.6875rem;
+    line-height: 1.6;
+    white-space: pre-wrap;
+    word-break: break-word;
+    color: var(--text-muted);
+  }
+
+  /* Compare Section */
+  .compare-section {
+    margin-top: 3rem;
+  }
+
+  .section-divider {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .section-divider::before,
+  .section-divider::after {
+    content: "";
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+  }
+
+  .section-divider span {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  .selectors {
+    display: flex;
+    align-items: end;
+    gap: 1rem;
+    justify-content: center;
+    margin-bottom: 1.5rem;
+    flex-wrap: wrap;
+  }
+
+  .select-wrap {
+    flex: 1;
+    max-width: 340px;
+  }
+
+  .select-wrap label {
+    display: block;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--text-muted);
+    margin-bottom: 0.375rem;
+  }
+
+  .select-wrap select {
+    width: 100%;
+    padding: 0.625rem 0.875rem;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    color: var(--text);
+    font-size: 0.875rem;
+    outline: none;
+    cursor: pointer;
+    transition: border-color 0.15s;
+  }
+
+  .select-wrap select:focus {
+    border-color: var(--text-muted);
+  }
+
+  .vs {
+    font-size: 0.875rem;
+    color: var(--text-muted);
+    font-weight: 600;
+    padding-bottom: 0.625rem;
+  }
+
+  .comparison {
+    transition: opacity 0.2s;
+  }
+
+  .comparison.hidden {
+    display: none;
+  }
+
+  .compare-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+  }
+
+  .compare-col {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 1.5rem;
+  }
+
+  .compare-col :global(.compare-header) { margin-bottom: 1.25rem; }
+  .compare-col :global(.badge) {
+    font-size: 0.6875rem; font-weight: 600; padding: 0.2rem 0.5rem;
+    border-radius: 999px; text-transform: uppercase; letter-spacing: 0.03em;
+    display: inline-block; margin-bottom: 0.5rem;
+  }
+  .compare-col :global(h2) { font-size: 1.125rem; font-weight: 700; margin-bottom: 0.25rem; }
+  .compare-col :global(.spdx) { font-size: 0.75rem; color: var(--text-muted); font-family: monospace; }
+  .compare-col :global(.compare-section) { margin-bottom: 1rem; }
+  .compare-col :global(h3) { font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.5rem; }
+  .compare-col :global(.perm-section h3) { color: #10b981; }
+  .compare-col :global(.cond-section h3) { color: #f59e0b; }
+  .compare-col :global(.lim-section h3) { color: #ef4444; }
+  .compare-col :global(ul) { list-style: none; display: flex; flex-direction: column; gap: 0.375rem; }
+  .compare-col :global(li) { font-size: 0.8125rem; display: flex; align-items: center; gap: 0.5rem; }
+  .compare-col :global(.icon) { font-size: 0.75rem; width: 1rem; text-align: center; flex-shrink: 0; }
+  .compare-col :global(.icon.perm) { color: #10b981; }
+  .compare-col :global(.icon.cond) { color: #f59e0b; }
+  .compare-col :global(.icon.lim) { color: #ef4444; }
+  .compare-col :global(.none) { font-size: 0.8125rem; color: var(--text-muted); }
+
   @media (max-width: 640px) {
     .grid {
       grid-template-columns: 1fr;
@@ -202,18 +562,91 @@ import { licenses, categories } from "../data/licenses";
     .hero h1 {
       font-size: 1.5rem;
     }
+    .modal-body :global(.m-columns) {
+      grid-template-columns: 1fr;
+    }
+    .compare-grid {
+      grid-template-columns: 1fr;
+    }
   }
 </style>
 
-<script>
-  const filters = document.getElementById("filters")!;
-  const search = document.getElementById("search") as HTMLInputElement;
-  const cards = document.querySelectorAll<HTMLElement>(".card");
+<script define:vars={{ licenses, categories }}>
+  const licenseMap = Object.fromEntries(licenses.map((l) => [l.id, l]));
 
+  function escapeHtml(text) {
+    const el = document.createElement("span");
+    el.textContent = text;
+    return el.innerHTML;
+  }
+
+  // --- Modal ---
+  const overlay = document.getElementById("modal-overlay");
+  const modalBody = document.getElementById("modal-body");
+  const modalExpand = document.getElementById("modal-expand");
+  const modalClose = document.getElementById("modal-close");
+  const cards = document.querySelectorAll(".card[data-id]");
+
+  function openModal(id) {
+    const l = licenseMap[id];
+    if (!l) return;
+    const cat = categories[l.category];
+
+    modalExpand.href = "/license/" + encodeURIComponent(l.id);
+
+    modalBody.innerHTML = `
+      <span class="m-badge" style="background:${cat.color}22;color:${cat.color};border:1px solid ${cat.color}33">${escapeHtml(cat.label)}</span>
+      <h2 class="m-title">${escapeHtml(l.name)}</h2>
+      <p class="m-spdx">${escapeHtml(l.spdx)}</p>
+      <p class="m-desc">${escapeHtml(l.description)}</p>
+      <div class="m-columns">
+        <div class="m-col perm-col">
+          <h3>Permissions</h3>
+          <ul>${l.permissions.map((p) => '<li><span class="m-icon perm">&#10003;</span> ' + escapeHtml(p) + '</li>').join("")}</ul>
+        </div>
+        <div class="m-col cond-col">
+          <h3>Conditions</h3>
+          ${l.conditions.length ? '<ul>' + l.conditions.map((c) => '<li><span class="m-icon cond">&#9679;</span> ' + escapeHtml(c) + '</li>').join("") + '</ul>' : '<p class="m-none">None</p>'}
+        </div>
+        <div class="m-col lim-col">
+          <h3>Limitations</h3>
+          ${l.limitations.length ? '<ul>' + l.limitations.map((x) => '<li><span class="m-icon lim">&times;</span> ' + escapeHtml(x) + '</li>').join("") + '</ul>' : '<p class="m-none">None</p>'}
+        </div>
+      </div>
+      <details class="m-text-toggle">
+        <summary>View full license text</summary>
+        <pre>${escapeHtml(l.text)}</pre>
+      </details>
+    `;
+
+    overlay.classList.add("open");
+    document.body.style.overflow = "hidden";
+  }
+
+  function closeModal() {
+    overlay.classList.remove("open");
+    document.body.style.overflow = "";
+  }
+
+  cards.forEach((card) => {
+    card.addEventListener("click", () => openModal(card.dataset.id));
+  });
+
+  modalClose.addEventListener("click", closeModal);
+  overlay.addEventListener("click", (e) => {
+    if (e.target === overlay) closeModal();
+  });
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape") closeModal();
+  });
+
+  // --- Filters ---
+  const filters = document.getElementById("filters");
+  const search = document.getElementById("search");
   let activeFilter = "all";
 
   filters.addEventListener("click", (e) => {
-    const btn = (e.target as HTMLElement).closest(".filter-btn") as HTMLElement | null;
+    const btn = e.target.closest(".filter-btn");
     if (!btn) return;
     filters.querySelectorAll(".filter-btn").forEach((b) => b.classList.remove("active"));
     btn.classList.add("active");
@@ -227,8 +660,50 @@ import { licenses, categories } from "../data/licenses";
     const q = search.value.toLowerCase().trim();
     cards.forEach((card) => {
       const matchCat = activeFilter === "all" || card.dataset.category === activeFilter;
-      const matchSearch = !q || (card.dataset.name || "").includes(q) || card.textContent!.toLowerCase().includes(q);
+      const matchSearch = !q || (card.dataset.name || "").includes(q) || card.textContent.toLowerCase().includes(q);
       card.style.display = matchCat && matchSearch ? "" : "none";
     });
   }
+
+  // --- Compare ---
+  const selectA = document.getElementById("licenseA");
+  const selectB = document.getElementById("licenseB");
+  const comparison = document.getElementById("comparison");
+  const colA = document.getElementById("colA");
+  const colB = document.getElementById("colB");
+
+  function renderCompare() {
+    const a = licenseMap[selectA.value];
+    const b = licenseMap[selectB.value];
+    if (!a || !b) { comparison.classList.add("hidden"); return; }
+    comparison.classList.remove("hidden");
+    colA.innerHTML = renderCompareLicense(a);
+    colB.innerHTML = renderCompareLicense(b);
+  }
+
+  function renderCompareLicense(l) {
+    const cat = categories[l.category];
+    return `
+      <div class="compare-header">
+        <span class="badge" style="background:${cat.color}22;color:${cat.color};border:1px solid ${cat.color}33">${escapeHtml(cat.label)}</span>
+        <h2>${escapeHtml(l.name)}</h2>
+        <span class="spdx">${escapeHtml(l.spdx)}</span>
+      </div>
+      <div class="compare-section perm-section">
+        <h3>Permissions</h3>
+        <ul>${l.permissions.map((p) => '<li><span class="icon perm">&#10003;</span> ' + escapeHtml(p) + '</li>').join("")}</ul>
+      </div>
+      <div class="compare-section cond-section">
+        <h3>Conditions</h3>
+        ${l.conditions.length ? '<ul>' + l.conditions.map((c) => '<li><span class="icon cond">&#9679;</span> ' + escapeHtml(c) + '</li>').join("") + '</ul>' : '<p class="none">None</p>'}
+      </div>
+      <div class="compare-section lim-section">
+        <h3>Limitations</h3>
+        ${l.limitations.length ? '<ul>' + l.limitations.map((x) => '<li><span class="icon lim">&times;</span> ' + escapeHtml(x) + '</li>').join("") + '</ul>' : '<p class="none">None</p>'}
+      </div>
+    `;
+  }
+
+  selectA.addEventListener("change", renderCompare);
+  selectB.addEventListener("change", renderCompare);
 </script>
