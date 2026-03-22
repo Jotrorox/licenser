@@ -1,0 +1,219 @@
+---
+import Base from "../../layouts/Base.astro";
+import { licenses, categories, getLicenseById } from "../../data/licenses";
+
+export function getStaticPaths() {
+  return licenses.map((l) => ({ params: { id: l.id } }));
+}
+
+const { id } = Astro.params;
+const license = getLicenseById(id as string);
+
+if (!license) {
+  return Astro.redirect("/404");
+}
+
+const cat = categories[license.category];
+---
+
+<Base title={license.name}>
+  <div class="back">
+    <a href="/">&larr; All licenses</a>
+  </div>
+
+  <header class="header">
+    <span class="badge" style={`background:${cat.color}22;color:${cat.color};border:1px solid ${cat.color}33`}>
+      {cat.label}
+    </span>
+    <h1>{license.name}</h1>
+    <p class="spdx">SPDX: <code>{license.spdx}</code></p>
+    <p class="desc">{license.description}</p>
+  </header>
+
+  <div class="columns">
+    <div class="col perm-col">
+      <h3>Permissions</h3>
+      <ul>
+        {license.permissions.map((p) => <li><span class="icon perm">&#10003;</span> {p}</li>)}
+      </ul>
+    </div>
+    <div class="col cond-col">
+      <h3>Conditions</h3>
+      {license.conditions.length > 0 ? (
+        <ul>
+          {license.conditions.map((c) => <li><span class="icon cond">&#9679;</span> {c}</li>)}
+        </ul>
+      ) : (
+        <p class="none">None</p>
+      )}
+    </div>
+    <div class="col lim-col">
+      <h3>Limitations</h3>
+      {license.limitations.length > 0 ? (
+        <ul>
+          {license.limitations.map((l) => <li><span class="icon lim">&times;</span> {l}</li>)}
+        </ul>
+      ) : (
+        <p class="none">None</p>
+      )}
+    </div>
+  </div>
+
+  <details class="license-text">
+    <summary>View full license text</summary>
+    <pre>{license.text}</pre>
+  </details>
+</Base>
+
+<style>
+  .back {
+    margin-bottom: 1.5rem;
+  }
+
+  .back a {
+    color: var(--text-muted);
+    font-size: 0.875rem;
+    transition: color 0.15s;
+  }
+
+  .back a:hover {
+    color: var(--text);
+  }
+
+  .header {
+    margin-bottom: 2rem;
+  }
+
+  .badge {
+    font-size: 0.6875rem;
+    font-weight: 600;
+    padding: 0.2rem 0.5rem;
+    border-radius: 999px;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    display: inline-block;
+    margin-bottom: 0.75rem;
+  }
+
+  .header h1 {
+    font-size: 1.75rem;
+    font-weight: 700;
+    letter-spacing: -0.03em;
+    margin-bottom: 0.375rem;
+  }
+
+  .spdx {
+    font-size: 0.8125rem;
+    color: var(--text-muted);
+    margin-bottom: 0.75rem;
+  }
+
+  .spdx code {
+    background: var(--surface);
+    padding: 0.125rem 0.375rem;
+    border-radius: 4px;
+    font-size: 0.8125rem;
+  }
+
+  .desc {
+    color: var(--text-muted);
+    font-size: 0.9375rem;
+    line-height: 1.6;
+    max-width: 720px;
+  }
+
+  .columns {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1rem;
+    margin-bottom: 2rem;
+  }
+
+  .col {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 1.25rem;
+  }
+
+  .col h3 {
+    font-size: 0.8125rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 0.75rem;
+  }
+
+  .perm-col h3 { color: #10b981; }
+  .cond-col h3 { color: #f59e0b; }
+  .lim-col h3 { color: #ef4444; }
+
+  .col ul {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .col li {
+    font-size: 0.8125rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .icon {
+    font-size: 0.75rem;
+    width: 1rem;
+    text-align: center;
+    flex-shrink: 0;
+  }
+
+  .icon.perm { color: #10b981; }
+  .icon.cond { color: #f59e0b; }
+  .icon.lim { color: #ef4444; }
+
+  .none {
+    font-size: 0.8125rem;
+    color: var(--text-muted);
+  }
+
+  .license-text {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    margin-bottom: 2rem;
+  }
+
+  .license-text summary {
+    padding: 1rem 1.25rem;
+    cursor: pointer;
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: var(--text-muted);
+    transition: color 0.15s;
+  }
+
+  .license-text summary:hover {
+    color: var(--text);
+  }
+
+  .license-text pre {
+    padding: 0 1.25rem 1.25rem;
+    font-size: 0.75rem;
+    line-height: 1.6;
+    white-space: pre-wrap;
+    word-break: break-word;
+    color: var(--text-muted);
+    overflow-x: auto;
+  }
+
+  @media (max-width: 640px) {
+    .columns {
+      grid-template-columns: 1fr;
+    }
+    .header h1 {
+      font-size: 1.375rem;
+    }
+  }
+</style>
